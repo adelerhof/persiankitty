@@ -1,0 +1,29 @@
+{"level":"info","version":"1.18.0","commit":"5edc81f","time":"2025-03-10T15:02:43+01:00","message":"Starting analysis with Sysdig scanner"}
+{"level":"info","time":"2025-03-10T15:02:43+01:00","message":"Using path for the cache: /home/erik/.cache/inlineScannerCache.db"}
+{"level":"info","time":"2025-03-10T15:02:43+01:00","message":"Using default vulnerability db version: V2"}
+{"level":"info","error":"failed parsing OnPrem version : Malformed version: ","time":"2025-03-10T15:02:44+01:00","message":"unable to get onPrem version, will assume SaaS environment"}
+{"level":"info","time":"2025-03-10T15:02:44+01:00","message":"Using default vulnerability db version: V2"}
+{"level":"info","time":"2025-03-10T15:02:44+01:00","message":"Retrieving MainDB"}
+{"level":"info","time":"2025-03-10T15:02:44+01:00","message":"current db is older than 24h0m0s, check for updates"}
+{"level":"info","time":"2025-03-10T15:02:44+01:00","message":"Newer MainDB available, overwrite current one"}
+{"level":"info","time":"2025-03-10T15:02:44+01:00","message":"Downloading a new MainDB to /home/erik/adelerhof.eu/sysdig/main.db/sysdig-db-data"}
+{"level":"info","dbVersion":"V2","dbTimestamp":"2025-03-10T07:22:11Z","time":"2025-03-10T15:02:48+01:00","message":"DB correctly downloaded"}
+{"level":"info","time":"2025-03-10T15:02:48+01:00","message":"Got updated DB file on path /home/erik/adelerhof.eu/sysdig/main.db/sysdig-db-data: 272677779 bytes downloaded"}
+{"level":"info","time":"2025-03-10T15:02:49+01:00","message":"Loading MainDB from: /home/erik/adelerhof.eu/sysdig/main.db/sysdig-db-data"}
+{"level":"info","time":"2025-03-10T15:02:49+01:00","message":"Done: MainDB loaded"}
+{"level":"info","time":"2025-03-10T15:02:49+01:00","message":"Using default vulnerability db version: V2"}
+{"level":"info","time":"2025-03-10T15:02:49+01:00","message":"Using CSAF-VEX data for rpm matching"}
+{"level":"info","imgName":"ghcr.io/adelerhof/piepkip:20250310150206","time":"2025-03-10T15:02:49+01:00","message":"Retrieving image"}
+{"level":"warn","error":"error creating default store object: mount /home/erik/.local/share/containers/storage/overlay:/home/erik/.local/share/containers/storage/overlay, flags: 0x1000: operation not permitted","time":"2025-03-10T15:02:49+01:00","message":"failed to create containers-storage loader, will continue without this image loader"}
+{"level":"info","imgName":"ghcr.io/adelerhof/piepkip:20250310150206","time":"2025-03-10T15:03:01+01:00","message":"Done: image retrieved"}
+{"level":"info","time":"2025-03-10T15:03:01+01:00","message":"Start analyzing image"}
+{"level":"info","url":"https://app.us4.sysdig.com/api/scanning/sbom/v2/base-images/search","layersDigest":["sha256:08000c18d16dadf9553d747a58cf44023423a9ab010aab96cf263d2216b8b350","sha256:130853b31c9432ebe7bc911a0d72659661202fcbda875dc4e4170cbc8919b572"],"time":"2025-03-10T15:03:02+01:00","message":"base images resolved"}
+{"level":"info","assetID":"sha256:8d8e4f4dd1e52880878fdd701987197d0fd19d82371d20287805e9fbb23b53f5","pullstring":"ghcr.io/adelerhof/piepkip:20250310150206","analyzerInfo":{"version":"v0.0.0-20241024132738-0b2ddce6ea6c"},"time":"2025-03-10T15:03:02+01:00","message":"{\"shouldExtract\":true}\n"}
+{"level":"info","time":"2025-03-10T15:03:02+01:00","message":"Start matching vulnerabilities"}
+{"level":"info","time":"2025-03-10T15:03:02+01:00","message":"Matched 17 packages"}
+{"level":"info","time":"2025-03-10T15:03:03+01:00","message":"Start policies evaluation"}
+{"level":"info","result":"failed","time":"2025-03-10T15:03:03+01:00","message":"End policies evaluation"}
+{"level":"info","time":"2025-03-10T15:03:03+01:00","message":"Start risks acceptance evaluation"}
+{"level":"info","time":"2025-03-10T15:03:04+01:00","message":"Scan Result upload in progress"}
+{"level":"info","scan-result-id":"182b75f6eb9528cd9af1f6a26d670950","scan-result-url":"https://app.us4.sysdig.com/secure/#/vulnerabilities/results/182b75f6eb9528cd9af1f6a26d670950/overview","time":"2025-03-10T15:03:04+01:00","message":"Scan Result uploaded"}
+{"level":"info","duration":"21.507732848s","time":"2025-03-10T15:03:04+01:00","message":"Done"}

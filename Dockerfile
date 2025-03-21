@@ -1,9 +1,9 @@
 # builder image
-FROM golang:1.15.6-alpine3.12 as builder
+FROM docker.io/library/golang:1.24-alpine3.21 AS builder
 RUN mkdir /build
 ADD *.go /build/
 WORKDIR /build
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o kitty .
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE='auto' go build -a -o kitty .
 
 
 # generate clean, final image for end users
