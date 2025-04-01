@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 #############################################################
 # CREDENTIALS_FILE should contain the following variables:  #
 # GH_TOKEN= token for github                                #
@@ -10,6 +10,7 @@ set -x
 # Set some variables
 CREDENTIALS_FILE="${HOME}/adelerhof.eu/variables/credentials.gpg"
 REPO_LIST='git@github.com:adelerhof/kitty.git'
+TAG=$(date +%Y%m%d%H%M%S)
 
 # Evaluate the content of credentials.gpg for usernames, passwords & tokens
 eval "$(gpg -d ${CREDENTIALS_FILE} 2>/dev/null)"
@@ -54,13 +55,25 @@ function login_docker {
 
 function build_image {
 
-  TAG=$(date +%Y%m%d%H%M%S)
+
   # Build the Docker image date
   buildah build -f Dockerfile -t ghcr.io/adelerhof/kitty:${TAG}
-  buildah build -f Dockerfile -t ghcr.io/adelerhof/kitty:latest
+  # buildah build -f Dockerfile -t ghcr.io/adelerhof/kitty:latest
   # buildah build -f Dockerfile -t harbor.adelerhof.eu/kitty/kitty:${TAG}
   # buildah build -f Dockerfile -t harbor.adelerhof.eu/kitty/kitty:latest
 
+}
+
+function tag_image {
+
+  # Build the Docker image date
+  buildah tag ghcr.io/adelerhof/kitty:${TAG} ghcr.io/adelerhof/kitty:latest
+  buildah tag ghcr.io/adelerhof/kitty:${TAG} harbor.adelerhof.eu/kitty/kitty:${TAG}
+  buildah tag ghcr.io/adelerhof/kitty:${TAG} harbor.adelerhof.eu/kitty/kitty:latest
+  # buildah tag ghcr.io/adelerhof/kitty:${TAG} containerrepomcp.azurecr.io/kitty/kitty:${TAG}
+  # buildah tag ghcr.io/adelerhof/kitty:${TAG} containerrepomcp.azurecr.io/kitty/kitty:latest
+  buildah tag ghcr.io/adelerhof/kitty:${TAG} ead2registry.azurecr.io/kitty/kitty:${TAG}
+  buildah tag ghcr.io/adelerhof/kitty:${TAG} ead2registry.azurecr.io/badkitty/kitty:${TAG}
 }
 
 function push_image {
@@ -70,17 +83,14 @@ function push_image {
   buildah push ghcr.io/adelerhof/kitty:latest
   # buildah push harbor.adelerhof.eu/kitty/kitty:${TAG}
   # buildah push harbor.adelerhof.eu/kitty/kitty:latest
+  # buildah push containerrepomcp.azurecr.io/kitty/kitty:${TAG}
+  # buildah push containerrepomcp.azurecr.io/kitty/kitty:latest
+  buildah push ead2registry.azurecr.io/kitty/kitty:${TAG}
+  buildah push ead2registry.azurecr.io/badkitty/kitty:${TAG}
 
 }
 
-function retag_image {
 
-  TAG=$(date +%Y%m%d%H%M%Svoorjeroen)
-  # Build the Docker image date
-  buildah tag ghcr.io/adelerhof/kitty:latest ghcr.io/adelerhof/kitty:${TAG}
-  buildah build -f Dockerfile -t ghcr.io/adelerhof/kitty:latest
-
-}
 
 # function cleanup {
 
@@ -111,9 +121,10 @@ function deploy_prd {
   login_docker
 	checkout_code
 	build_image
+  tag_image
 	push_image
   scan_code
-  lint_image
+  # lint_image
 	# cleanup
 
 }

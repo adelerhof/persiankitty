@@ -64,6 +64,7 @@ jobs:
           ghcr.io/${{env.GITHUB_REPO}}:scan
           ghcr.io/${{env.GITHUB_REPO}}:${{ steps.bump_version.outputs.new_tag }}
           ghcr.io/${{env.GITHUB_REPO}}:latest
+          ghcr.io/${{env.GITHUB_REPO}}:buildbyghactions
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
