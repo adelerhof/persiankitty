@@ -21,6 +21,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Podman and Buildah
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y podman buildah
+        # Note: Use 'sudo' if the runner doesn't run as root.
+        # Adjust package manager commands if using a different base image (e.g., yum/dnf for RHEL/Fedora)
+
+
+
       - name: Log in to GitHub Container Registry
         # Buildah uses Podman's auth file, so podman-login works
         uses: redhat-actions/podman-login@v1
