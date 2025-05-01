@@ -7,7 +7,7 @@ jobs:
     # IMPORTANT: Ensure this job runs on runners managed by the ARC
     # deployment/set where dockerEnabled: true is configured.
     # Use labels defined in your RunnerDeployment/RunnerSet.
-    runs-on: arc-runner-label # Adjust label as needed
+    runs-on: arc-runner-set # Adjust label as needed
 
     permissions:
       contents: read
