@@ -3,8 +3,13 @@ name: Build and Push Docker Image with ARC (Buildah)
 on: [push]
 
 env:
+  # Define Registry URL
+  REGISTRY: ghcr.io
   # Define image name (adjust if needed)
   IMAGE_NAME: ${{ github.repository }} # Uses repo name like 'owner/repo'
+  # Construct full image path (GHCR requires lowercase owner)
+  IMAGE_REGISTRY_PATH: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
+
 
 jobs:
   build:
@@ -12,6 +17,11 @@ jobs:
     # deployment/set where dockerEnabled: true is configured.
     # Use labels defined in your RunnerDeployment/RunnerSet.
     runs-on: arc-runner-set # Adjust label as needed
+
+    # Define the container where job steps will run
+    container:
+      image: quay.io/buildah/stable:v1.39 # Or choose a newer stable tag if available
+      # options: --privileged # Required for Buildah to run in a container
 
     permissions:
       contents: read
@@ -21,36 +31,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Podman and Buildah
+      - name: Log in to GitHub Container Registry
+        # Use buildah login inside the buildah container
+        run: buildah login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
+        # Note: Buildah uses the same auth file as podman
+
+      - name: Build Docker image with Buildah
+        id: build
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y podman buildah
-        # Note: Use 'sudo' if the runner doesn't run as root.
-        # Adjust package manager commands if using a different base image (e.g., yum/dnf for RHEL/Fedora)
-
-
-
-
-       # --- Use sudo for Podman/Buildah commands ---
-      - name: Log in to GitHub Container Registry (as root)
-        run: sudo podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Build Docker image with Buildah (as root)
-        id: buildah
-        run: |
-          sudo buildah bud \
-            --tag ${{ env.IMAGE_REGISTRY_PATH }}:latest \
+          # Buildah commands are directly available in the container's PATH
+          # Use /github/workspace as the context directory
+          buildah bud \
             --tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} \
-            -f ./Dockerfile .
-          # Output the image name/tag for potential later steps (optional)
-          echo "image-with-tag=${{ env.IMAGE_REGISTRY_PATH }}:latest" >> $GITHUB_OUTPUT
+            -f ${{ github.workspace }}/Dockerfile ${{ github.workspace }}
+          # Add other tags if needed, e.g., :latest
+          buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:latest
 
-      - name: Push Docker image with Buildah (as root)
-        run: |
-          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:latest
-          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }}
+          # Output the primary tag used for push
+          echo "primary_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "latest_tag=latest" >> $GITHUB_OUTPUT
 
-      # Optional: Print image details
-      - name: Print image details
+      - name: Push Docker image with Buildah
         run: |
-          echo "Image pushed: ${{ steps.buildah.outputs.image-with-tag }}"
+          # Push the commit SHA tag
+          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.primary_tag }}
+          # Push the 'latest' tag
+          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.latest_tag }}
+
+      # Example: If you needed to tag based on a Git tag event
+      - name: Tag and Push Release Version (if Git tag exists)
+        if: startsWith(github.ref, 'refs/tags/') # Only run for Git tags
+        run: |
+          # Extract version from Git tag (e.g., v1.2.3 -> 1.2.3)
+          VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v*//')
+          echo "Tagging release version: $VERSION"
+          # Tag the existing commit-sha image with the new version tag
+          buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
+          # Push the version tag
+          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
