@@ -31,41 +31,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        # Use buildah login inside the buildah container
-        run: buildah login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
-        # Note: Buildah uses the same auth file as podman
 
-      - name: Build Docker image with Buildah
+      # Buildah is now in the PATH, use sudo to avoid rootless issues
+      - name: Log in to GitHub Container Registry (as root)
+        run: sudo buildah login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Build Docker image with Buildah (as root)
         id: build
         run: |
-          # Buildah commands are directly available in the container's PATH
-          # Use /github/workspace as the context directory
-          buildah bud \
+          sudo buildah bud \
             --tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} \
-            -f ${{ github.workspace }}/Dockerfile ${{ github.workspace }}
-          # Add other tags if needed, e.g., :latest
-          buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:latest
-
-          # Output the primary tag used for push
+            -f Dockerfile .
+          sudo buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:latest
           echo "primary_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
           echo "latest_tag=latest" >> $GITHUB_OUTPUT
 
-      - name: Push Docker image with Buildah
+      - name: Push Docker image with Buildah (as root)
         run: |
-          # Push the commit SHA tag
-          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.primary_tag }}
-          # Push the 'latest' tag
-          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.latest_tag }}
+          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.primary_tag }}
+          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ steps.build.outputs.latest_tag }}
 
-      # Example: If you needed to tag based on a Git tag event
+      # Optional: Tag and Push Release Version
       - name: Tag and Push Release Version (if Git tag exists)
-        if: startsWith(github.ref, 'refs/tags/') # Only run for Git tags
+        # ... (same as before, just ensure commands use sudo) ...
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          # Extract version from Git tag (e.g., v1.2.3 -> 1.2.3)
           VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v*//')
           echo "Tagging release version: $VERSION"
-          # Tag the existing commit-sha image with the new version tag
-          buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
-          # Push the version tag
-          buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
+          sudo buildah tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
+          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${VERSION}
