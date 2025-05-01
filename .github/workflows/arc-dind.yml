@@ -1,0 +1,60 @@
+name: Build and Push Docker Image with ARC (DinD)
+
+on: [push]
+
+jobs:
+  build:
+    # IMPORTANT: Ensure this job runs on runners managed by the ARC
+    # deployment/set where dockerEnabled: true is configured.
+    # Use labels defined in your RunnerDeployment/RunnerSet.
+    runs-on: arc-runner-label # Adjust label as needed
+
+    permissions:
+      contents: read
+      packages: write # Needed for ghcr.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        # Buildx setup might have slightly different behavior/performance
+        # in DinD compared to a host daemon, but the action should work.
+
+      - name: Build and push
+        # https://github.com/docker/build-push-action
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{env.GITHUB_REPO}}:${{env.GITHUB_SHA}}
+            ghcr.io/${{env.GITHUB_REPO}}:scan
+            ghcr.io/${{env.GITHUB_REPO}}:${{ steps.bump_version.outputs.new_tag }}
+            ghcr.io/${{env.GITHUB_REPO}}:latest
+            ghcr.io/${{env.GITHUB_REPO}}:buildbyghactions
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # tags: ghcr.io/${{ github.repository }}:latest # Example tag
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/${{env.GITHUB_REPO}}:${{env.GITHUB_SHA}}
+            ghcr.io/${{env.GITHUB_REPO}}:scan
+            ghcr.io/${{env.GITHUB_REPO}}:${{ steps.bump_version.outputs.new_tag }}
+            ghcr.io/${{env.GITHUB_REPO}}:latest
+            ghcr.io/${{env.GITHUB_REPO}}:buildbyghactions
