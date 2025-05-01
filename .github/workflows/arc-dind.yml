@@ -30,37 +30,27 @@ jobs:
 
 
 
-      - name: Log in to GitHub Container Registry
-        # Buildah uses Podman's auth file, so podman-login works
-        uses: redhat-actions/podman-login@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image with Buildah
-        uses: redhat-actions/buildah-build@v2
-        id: buildah # Give the step an ID to potentially access outputs
-        with:
-          # Base image name (uses owner/repo format from env var)
-          image: ${{ env.IMAGE_NAME }}
-          # Registry where the image is pushed (lowercase owner required for GHCR)
-          registry: ghcr.io/${{ github.repository_owner }}
-          # Tags for the image (e.g., latest and git sha)
-          tags: "latest ${{ github.sha }}"
-          # Path to the Dockerfile (use 'containerfiles' if you prefer that name)
-          dockerfiles: |
-            ./Dockerfile
-          # Build context directory
-          context: .
-          # Push the image to the registry after building
-          push: true
-          # Optional: Add build arguments if needed
-          # build-args: |
-          #   MY_ARG=value
+       # --- Use sudo for Podman/Buildah commands ---
+      - name: Log in to GitHub Container Registry (as root)
+        run: sudo podman login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin <<< "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Build Docker image with Buildah (as root)
+        id: buildah
+        run: |
+          sudo buildah bud \
+            --tag ${{ env.IMAGE_REGISTRY_PATH }}:latest \
+            --tag ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }} \
+            -f ./Dockerfile .
+          # Output the image name/tag for potential later steps (optional)
+          echo "image-with-tag=${{ env.IMAGE_REGISTRY_PATH }}:latest" >> $GITHUB_OUTPUT
+
+      - name: Push Docker image with Buildah (as root)
+        run: |
+          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:latest
+          sudo buildah push ${{ env.IMAGE_REGISTRY_PATH }}:${{ github.sha }}
 
       # Optional: Print image details
       - name: Print image details
         run: |
-          echo "Image pushed: ${{ steps.buildah.outputs.image }}:${{ steps.buildah.outputs.tags }}"
-          echo "Full Image URL: ${{ steps.buildah.outputs.image-with-tag }}" # Usually includes the first tag
+          echo "Image pushed: ${{ steps.buildah.outputs.image-with-tag }}"
